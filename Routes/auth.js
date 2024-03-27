@@ -32,17 +32,53 @@ router.post('/createUser', [
         });
 
         const data = {
-            user:{
+            user: {
                 id: user.id
             }
         }
         const authToken = jwt.sign(data, 'manishisabadboy');
         console.log(authToken);
-        res.json({authToken});
+        res.json({ authToken });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
+});
+
+//sending request to localhost:5000/api/auth/login
+router.post('/login', [
+    body('email', 'Enter a valid email').isEmail(),
+    body('password', 'Password can not be blank').exists(),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    
+    const { email, password } = req.body;
+    try {
+    let user =  await User.findOne({ email });
+    if (!user) {
+        return res.status(400).json({ error: "please enter with correct credentials" });
+    }
+    const passwordCompare = await bcrypt.compare(password, user.password);
+    if (!passwordCompare) {
+        return res.status(400).json({ error: "please enter with correct credentials" });
+    }
+    
+    
+    const data = {
+        user: {
+            id: user.id
+        }
+    }
+    const authToken = jwt.sign(data, 'manishisabadboy');
+    console.log(authToken);
+    res.json({ authToken });
+} catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+}
 });
 
 module.exports = router;
